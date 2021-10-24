@@ -1,10 +1,28 @@
-import { App, Modal, Notice, Plugin, TFile } from "obsidian";
+import { App, Editor, Modal, Notice, Plugin, TFile } from "obsidian";
 import { SampleSettingTab } from "./SampleSettingTab";
 import { copy } from "./util";
 
-interface MyPluginSettings {}
+interface MyPluginSettings {
+  com: string;
+  annot: string;
+  cHead: string;
+  cCom: string;
+  cTask: string;
+  cTag: string;
+  cCat: string;
+  cKey: string;
+}
 
-const DEFAULT_SETTINGS: MyPluginSettings = {};
+const DEFAULT_SETTINGS: MyPluginSettings = {
+  com: "- ",
+  annot: "> ",
+  cHead: "#",
+  cCom: "%",
+  cTask: "?",
+  cTag: "!",
+  cCat: "+",
+  cKey: "=",
+};
 
 export default class MyPlugin extends Plugin {
   settings: MyPluginSettings;
