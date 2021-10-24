@@ -108,19 +108,22 @@ export default class MyPlugin extends Plugin {
       }
     });
 
-    const outputLines = output.split("\n");
-    const keywordFormat = `\nkeywords:: ${keywords.join(", ")}\n`;
-    if (outputLines[0] === "---") {
-      const endOfYaml =
-        outputLines.slice(1).findIndex((line) => line === "---") + 2;
-      outputLines.splice(endOfYaml, 0, keywordFormat);
-    } else {
-      outputLines.splice(0, 0, keywordFormat);
-    }
+    let result = output;
+    if (keywords.length) {
+      const outputLines = output.split("\n");
+      const keywordFormat = `\nkeywords:: ${keywords.join(", ")}\n`;
+      if (outputLines[0] === "---") {
+        const endOfYaml =
+          outputLines.slice(1).findIndex((line) => line === "---") + 2;
+        outputLines.splice(endOfYaml, 0, keywordFormat);
+      } else {
+        outputLines.splice(0, 0, keywordFormat);
+      }
 
-    const result = outputLines.join("\n");
+      result = outputLines.join("\n");
+    }
     console.log({ result });
-    copy(outputLines.join("\n"));
+    await copy(result);
   }
 
   onunload() {
