@@ -17,20 +17,21 @@ export default class MyPlugin extends Plugin {
     this.addCommand({
       id: "run-formatter",
       name: "Run Formatter on Current Note & Copy to Clipboard",
-      callback: async () => {
-        const currFile = this.app.workspace.getActiveFile();
-        if (currFile instanceof TFile) {
-          const content = await this.app.vault.read(currFile);
-          this.runFormatter(content);
-        } else {
-          new Notice(
-            "You must be focussed on a markdown note to run this command."
-          );
-        }
+      editorCallback: async (editor: Editor) => {
+        const content = await this.getSelectionText(editor);
+        this.runFormatter(content);
       },
     });
 
     this.addSettingTab(new SampleSettingTab(this.app, this));
+  }
+
+  async getSelectionText(editor: Editor) {
+    if (editor.somethingSelected()) {
+      return editor.getSelection();
+    } else {
+      return editor.getValue();
+    }
   }
 
   specialStarts = ["- #", "- %", "- ?", "- !", "- +", "- ="];
@@ -51,7 +52,7 @@ export default class MyPlugin extends Plugin {
     return copy.slice(i + after).find((line) => line.startsWith(type));
   }
 
-  runFormatter(content: string) {
+  async runFormatter(content: string) {
     let output = "";
     const lines = content.split("\n").filter((line) => line.trim() !== "");
     const keywords: string[] = [];
@@ -67,12 +68,12 @@ export default class MyPlugin extends Plugin {
         ) {
           output += line + "\n\n";
         }
-        //
+        // Swap annot and com
         else if (line.startsWith("- % ")) {
           const com = this.splitDropMerge(line, "- % ");
           output += `%%% ${com}\n${quoteBefore}\n\n`;
         }
-        //
+        // Merge disjoint annots
         else if (line.startsWith("- +")) {
           const quoteAfter = this.lineAfterI(lines, "> ", i);
           output += `${quoteBefore} ${this.splitDropMerge(
@@ -80,11 +81,11 @@ export default class MyPlugin extends Plugin {
             ">"
           )}\n\n`;
         }
-        //
+        // annot → task
         else if (line.startsWith("- ?")) {
           output += `- [ ] ${this.splitDropMerge(quoteBefore, ">")}\n\n`;
         }
-        //
+        // annot → header
         else if (line.match(/- #+/)) {
           const headingLevel = line.match(/- (#+)/)[1];
           output += `${headingLevel} ${this.splitDropMerge(
@@ -92,11 +93,11 @@ export default class MyPlugin extends Plugin {
             ">"
           )}\n\n`;
         }
-        //
+        // annot → tag
         else if (line.startsWith("- !")) {
           output += `#${this.splitDropMerge(quoteBefore, ">")}\n\n`;
         }
-        //
+        // keywords
         else if (line.startsWith("- =")) {
           keywords.push(this.splitDropMerge(quoteBefore, ">"));
         }
